@@ -1,102 +1,51 @@
-using NUnit.Framework;
-using Moq;
+using System;
+using Xunit;
 
-namespace TypeWiseAlertTests
+public class TypewiseAlertTests
 {
-    public enum BreachType
+    [Fact]
+    public void PassiveCooling_TooLowTemperature_ReturnsTooLow()
     {
-        TOO_LOW,
-        TOO_HIGH,
-        NORMAL
+        var strategy = new PassiveCooling();
+        var result = strategy.ClassifyTemperature(-1);
+        Assert.Equal(BreachType.TOO_LOW, result);
     }
 
-    public enum CoolingType
+    [Fact]
+    public void HiActiveCooling_NormalTemperature_ReturnsNormal()
     {
-        PASSIVE_COOLING,
-        HI_ACTIVE_COOLING
+        var strategy = new HiActiveCooling();
+        var result = strategy.ClassifyTemperature(30);
+        Assert.Equal(BreachType.NORMAL, result);
     }
 
-    public class BatteryCharacter
+    [Fact]
+    public void MedActiveCooling_TooHighTemperature_ReturnsTooHigh()
     {
-        public CoolingType CoolingType { get; set; }
-        public string Dummy { get; set; } 
+        var strategy = new MedActiveCooling();
+        var result = strategy.ClassifyTemperature(41);
+        Assert.Equal(BreachType.TOO_HIGH, result);
     }
 
-    public static class TypeWiseAlert
+    [Fact]
+    public void EmailAlert_TooHighTemperature_PrintsEmail()
     {
-        public static BreachType Mock_classifyTemperatureBreach(CoolingType coolingType, double temperatureInC)
+        var emailAlert = new EmailAlert();
+        using (var consoleOutput = new ConsoleOutput())
         {
-            return BreachType.NORMAL;
-        }
-
-        public static void checkAndAlert(string recipient, BatteryCharacter batteryChar, double temperature)
-        {
+            emailAlert.SendAlert(BreachType.TOO_HIGH);
+            Assert.Contains("Hi, the temperature is too high", consoleOutput.GetOutput());
         }
     }
 
-    public class TypeWiseAlertTestSuite
+    [Fact]
+    public void ControllerAlert_TooLowTemperature_PrintsControllerMessage()
     {
-        private static BreachType mockBreach;
-        private static Func<CoolingType, double, BreachType> funcPtrClassifyTemperatureBreach;
-
-        public void Setup()
+        var controllerAlert = new ControllerAlert();
+        using (var consoleOutput = new ConsoleOutput())
         {
-            funcPtrClassifyTemperatureBreach = TypeWiseAlert.Mock_classifyTemperatureBreach;
+            controllerAlert.SendAlert(BreachType.TOO_LOW);
+            Assert.Contains("0xfeed : TOO_LOW", consoleOutput.GetOutput());
         }
-
-        public void TestCheckAndAlert_TO_CONTROLLER_LowBreach()
-        {
-            mockBreach = funcPtrClassifyTemperatureBreach(CoolingType.PASSIVE_COOLING, -10);
-            var expectedBreach = BreachType.TOO_LOW;
-            var batteryChar = new BatteryCharacter { CoolingType = CoolingType.PASSIVE_COOLING, Dummy = " " };
-            TypeWiseAlert.checkAndAlert("TO_CONTROLLER", batteryChar, -10);
-            Assert.AreEqual(expectedBreach, mockBreach);
-        }
-
-        public void TestCheckAndAlert_TO_CONTROLLER_HighBreach()
-        {
-            mockBreach = funcPtrClassifyTemperatureBreach(CoolingType.PASSIVE_COOLING, 50);
-            var expectedBreach = BreachType.TOO_HIGH;
-            var batteryChar = new BatteryCharacter { CoolingType = CoolingType.PASSIVE_COOLING, Dummy = " " };
-            TypeWiseAlert.checkAndAlert("TO_CONTROLLER", batteryChar, 50);
-            Assert.AreEqual(expectedBreach, mockBreach);
-        }
-
-        public void TestCheckAndAlert_TO_CONTROLLER_NormalBreach()
-        {
-            mockBreach = funcPtrClassifyTemperatureBreach(CoolingType.PASSIVE_COOLING, 5);
-            var expectedBreach = BreachType.NORMAL;
-            var batteryChar = new BatteryCharacter { CoolingType = CoolingType.PASSIVE_COOLING, Dummy = " " };
-            TypeWiseAlert.checkAndAlert("TO_CONTROLLER", batteryChar, 5);
-            Assert.AreEqual(expectedBreach, mockBreach);
-        }
-
-        public void TestCheckAndAlert_TO_EMAIL_HighBreach()
-        {
-            mockBreach = funcPtrClassifyTemperatureBreach(CoolingType.HI_ACTIVE_COOLING, 50);
-            var expectedBreach = BreachType.TOO_HIGH;
-            var batteryChar = new BatteryCharacter { CoolingType = CoolingType.HI_ACTIVE_COOLING, Dummy = " " };
-            TypeWiseAlert.checkAndAlert("TO_EMAIL", batteryChar, 50);
-            Assert.AreEqual(expectedBreach, mockBreach);
-        }
-
-        public void TestCheckAndAlert_TO_EMAIL_LowBreach()
-        {
-            mockBreach = funcPtrClassifyTemperatureBreach(CoolingType.HI_ACTIVE_COOLING, -1);
-            var expectedBreach = BreachType.TOO_LOW;
-            var batteryChar = new BatteryCharacter { CoolingType = CoolingType.HI_ACTIVE_COOLING, Dummy = " " };
-            TypeWiseAlert.checkAndAlert("TO_EMAIL", batteryChar, -1);
-            Assert.AreEqual(expectedBreach, mockBreach);
-        }
-
-        public void TestCheckAndAlert_TO_EMAIL_NormalBreach()
-        {
-            mockBreach = funcPtrClassifyTemperatureBreach(CoolingType.PASSIVE_COOLING, 5);
-            var expectedBreach = BreachType.NORMAL;
-            var batteryChar = new BatteryCharacter { CoolingType = CoolingType.PASSIVE_COOLING, Dummy = " " };
-            TypeWiseAlert.checkAndAlert("TO_EMAIL", batteryChar, 10);
-            Assert.AreEqual(expectedBreach, mockBreach);
-        }
-
     }
 }
